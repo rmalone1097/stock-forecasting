@@ -206,132 +206,130 @@ def process_ETF_price_data(ticker:str, SMA_five_min_candles:int, BB_five_min_can
     
     return train_df, test_df
     
-# =============================================================================
-# # Add SPDR sector ETFs, as well as SPY and QQQ
-# def process_ticker_price_data(ticker:str, SPDR:list, SMA_five_min_candles:int, BB_five_min_candles:int, num_std:int, market_hours=True):
-#     ticker_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\' + ticker + '_data.csv'
-#     ticker_df = pd.read_csv(ticker_data_path)
-#     SPY_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\SPY_data.csv'
-#     SPY_df = pd.read_csv(SPY_data_path)
-#     QQQ_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\QQQ_data.csv'
-#     QQQ_df = pd.read_csv(QQQ_data_path)
-#     UVXY_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\UVXY_data.csv'
-#     UVXY_df = pd.read_csv(UVXY_data_path)
-#     for i, etf in enumerate(SPDR):
-#         SPDR_paths[i] = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\' + etf + '_data.csv'
-#     
-#     #Converts dataframe to floats
-#     cols_to_convert = ['open', 'high', 'low', 'close', 'volume']
-#     for col in cols_to_convert:
-#         df[col] = pd.to_numeric(df[col], errors='coerce')
-#         UVXY_df[col] = pd.to_numeric(UVXY_df[col], errors='coerce')
-#     
-#     #Converts from past-present to present-past
-#     df = df[::-1]
-#     UVXY_df = UVXY_df[::-1]
-#     df['typical price'] = (df['low'] + df['close'] + df['high']).div(3).values
-#     
-#     df['market_open'] = ''
-#     df['market_close'] = ''
-#     
-#     if market_hours == True:
-#         date_log = int(df.iloc[0][0][8:10])
-#         temp_tp = np.array([])
-#         temp_vol = np.array([])
-#         vwap = []
-#         
-#         for idx, row in tqdm(df.iterrows(), total=df.shape[0]):
-#             if row['time'] == 'time':
-#                 df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             split_el = row['time'].split()
-#             date = int(split_el[0][8:10])
-#             hour = int(split_el[1][0:2])
-#             minute = int(split_el[1][3:5])
-#             
-#             # Get rid of pre/post trades
-#             if hour < 9:
-#                 df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             elif hour == 9 and minute < 35:
-#                 df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             elif hour > 16:
-#                 df.drop([idx], axis=0, inplace=True) 
-#                 continue
-#             elif hour == 16 and minute > 0:
-#                 df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             
-#             elif hour == 9 and minute == 35:
-#                 df.loc[idx, 'market_open'] = 'market open'
-#             elif hour == 16 and minute == 0:
-#                 df.loc[idx, 'market_close'] = 'market close'
-#             
-#             # VWAP Calculation
-#             if date == date_log:
-#                 temp_tp = np.append(temp_tp, row['typical price'])
-#                 temp_vol = np.append(temp_vol, row['volume'])
-#                 vwap.append(np.sum(temp_tp * temp_vol) / np.sum(temp_vol))
-#             else:
-#                 temp_tp = np.array([row['typical price']])
-#                 temp_vol = np.array([row['volume']])
-#                 vwap.append(np.sum(temp_tp * temp_vol) / np.sum(temp_vol))
-#                 date_log = date
-#             
-#         for idx, row in tqdm(UVXY_df.iterrows(), total=UVXY_df.shape[0]):
-#             if row['time'] == 'time':
-#                 UVXY_df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             split_el = row['time'].split()
-#             date = int(split_el[0][8:10])
-#             hour = int(split_el[1][0:2])
-#             minute = int(split_el[1][3:5])
-#             
-#             # Get rid of pre/post trades
-#             if hour < 9:
-#                 UVXY_df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             elif hour == 9 and minute < 35:
-#                 UVXY_df.drop([idx], axis=0, inplace=True)
-#                 continue
-#             elif hour > 16:
-#                 UVXY_df.drop([idx], axis=0, inplace=True) 
-#                 continue
-#             elif hour == 16 and minute > 0:
-#                 UVXY_df.drop([idx], axis=0, inplace=True)
-#                 continue
-#         
-#     df['vwap'] = vwap
-#     df['UVXY typical price'] = (UVXY_df['low'] + UVXY_df['close'] + UVXY_df['high']).div(3).values
-#     df['UVXY volume'] = UVXY_df['volume'].values
-#     
-#     '''
-#     five_min_candles: How many 5 min candles used in Bollinger Band computation
-#     15 candle: 15 candle sma added to dataframe
-#     '''
-#     df[str(SMA_five_min_candles) + ' candle SMA'] = df['typical price'].rolling(15).mean()
-#     df[str(BB_five_min_candles) + ' candle SMA'] = df['typical price'].rolling(BB_five_min_candles).mean()
-#     df[str(BB_five_min_candles) + ' candle STD'] = df['typical price'].rolling(BB_five_min_candles).std()
-#     df['upper band'] = df[str(BB_five_min_candles) + ' candle SMA'] + num_std * df[str(BB_five_min_candles) + ' candle STD']
-#     df['lower band'] = df[str(BB_five_min_candles) + ' candle SMA'] - num_std * df[str(BB_five_min_candles) + ' candle STD']  
-#     
-#     time_idx_list = []
-#     
-#     for i in tqdm(range(df.shape[0])):
-#         time_idx_list.append(i)
-#         
-#     df['time_idx'] = time_idx_list
-#     df['group_id'] = [0] * df.shape[0]
-#     
-#     df = df[BB_five_min_candles:]
-#     
-#     test_num = int(df.shape[0] * 0.10)
-#     train_df = df[0:df.shape[0] - test_num]
-#     test_df = df[df.shape[0] - test_num:]
-#     
-#     return train_df, test_df
-# =============================================================================
+ # Add SPDR sector ETFs, as well as SPY and QQQ
+def process_ticker_price_data(ticker:str, SPDR:list, SMA_five_min_candles:int, BB_five_min_candles:int, num_std:int, market_hours=True):
+    ticker_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\' + ticker + '_data.csv'
+    ticker_df = pd.read_csv(ticker_data_path)
+    SPY_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\SPY_data.csv'
+    SPY_df = pd.read_csv(SPY_data_path)
+    QQQ_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\QQQ_data.csv'
+    QQQ_df = pd.read_csv(QQQ_data_path)
+    UVXY_data_path = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\UVXY_data.csv'
+    UVXY_df = pd.read_csv(UVXY_data_path)
+    for i, etf in enumerate(SPDR):
+        SPDR_paths[i] = 'C:\\Users\\water\\Documents\\Projects\\stock_project\\' + etf + '_data.csv'
+    
+    #Converts dataframe to floats
+    cols_to_convert = ['open', 'high', 'low', 'close', 'volume']
+    for col in cols_to_convert:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        UVXY_df[col] = pd.to_numeric(UVXY_df[col], errors='coerce')
+    
+    #Converts from past-present to present-past
+    df = df[::-1]
+    UVXY_df = UVXY_df[::-1]
+    df['typical price'] = (df['low'] + df['close'] + df['high']).div(3).values
+    
+    df['market_open'] = ''
+    df['market_close'] = ''
+    
+    if market_hours == True:
+        date_log = int(df.iloc[0][0][8:10])
+        temp_tp = np.array([])
+        temp_vol = np.array([])
+        vwap = []
+        
+        for idx, row in tqdm(df.iterrows(), total=df.shape[0]):
+            if row['time'] == 'time':
+                df.drop([idx], axis=0, inplace=True)
+                continue
+            split_el = row['time'].split()
+            date = int(split_el[0][8:10])
+            hour = int(split_el[1][0:2])
+            minute = int(split_el[1][3:5])
+            
+            # Get rid of pre/post trades
+            if hour < 9:
+                df.drop([idx], axis=0, inplace=True)
+                continue
+            elif hour == 9 and minute < 35:
+                df.drop([idx], axis=0, inplace=True)
+                continue
+            elif hour > 16:
+                df.drop([idx], axis=0, inplace=True) 
+                continue
+            elif hour == 16 and minute > 0:
+                df.drop([idx], axis=0, inplace=True)
+                continue
+            
+            elif hour == 9 and minute == 35:
+                df.loc[idx, 'market_open'] = 'market open'
+            elif hour == 16 and minute == 0:
+                df.loc[idx, 'market_close'] = 'market close'
+            
+            # VWAP Calculation
+            if date == date_log:
+                temp_tp = np.append(temp_tp, row['typical price'])
+                temp_vol = np.append(temp_vol, row['volume'])
+                vwap.append(np.sum(temp_tp * temp_vol) / np.sum(temp_vol))
+            else:
+                temp_tp = np.array([row['typical price']])
+                temp_vol = np.array([row['volume']])
+                vwap.append(np.sum(temp_tp * temp_vol) / np.sum(temp_vol))
+                date_log = date
+            
+        for idx, row in tqdm(UVXY_df.iterrows(), total=UVXY_df.shape[0]):
+            if row['time'] == 'time':
+                UVXY_df.drop([idx], axis=0, inplace=True)
+                continue
+            split_el = row['time'].split()
+            date = int(split_el[0][8:10])
+            hour = int(split_el[1][0:2])
+            minute = int(split_el[1][3:5])
+            
+            # Get rid of pre/post trades
+            if hour < 9:
+                UVXY_df.drop([idx], axis=0, inplace=True)
+                continue
+            elif hour == 9 and minute < 35:
+                UVXY_df.drop([idx], axis=0, inplace=True)
+                continue
+            elif hour > 16:
+                UVXY_df.drop([idx], axis=0, inplace=True) 
+                continue
+            elif hour == 16 and minute > 0:
+                UVXY_df.drop([idx], axis=0, inplace=True)
+                continue
+        
+    df['vwap'] = vwap
+    df['UVXY typical price'] = (UVXY_df['low'] + UVXY_df['close'] + UVXY_df['high']).div(3).values
+    df['UVXY volume'] = UVXY_df['volume'].values
+    
+    '''
+    five_min_candles: How many 5 min candles used in Bollinger Band computation
+    15 candle: 15 candle sma added to dataframe
+    '''
+    df[str(SMA_five_min_candles) + ' candle SMA'] = df['typical price'].rolling(15).mean()
+    df[str(BB_five_min_candles) + ' candle SMA'] = df['typical price'].rolling(BB_five_min_candles).mean()
+    df[str(BB_five_min_candles) + ' candle STD'] = df['typical price'].rolling(BB_five_min_candles).std()
+    df['upper band'] = df[str(BB_five_min_candles) + ' candle SMA'] + num_std * df[str(BB_five_min_candles) + ' candle STD']
+    df['lower band'] = df[str(BB_five_min_candles) + ' candle SMA'] - num_std * df[str(BB_five_min_candles) + ' candle STD']  
+    
+    time_idx_list = []
+    
+    for i in tqdm(range(df.shape[0])):
+        time_idx_list.append(i)
+        
+    df['time_idx'] = time_idx_list
+    df['group_id'] = [0] * df.shape[0]
+    
+    df = df[BB_five_min_candles:]
+    
+    test_num = int(df.shape[0] * 0.10)
+    train_df = df[0:df.shape[0] - test_num]
+    test_df = df[df.shape[0] - test_num:]
+    
+    return train_df, test_df
 
 def plot_df_days(df, starting_candle:int, SMA_five_min_candles, days=5):
 
